@@ -17,34 +17,13 @@
 # limitations under the License.
 #
 
-case node[:platform]
-when "ubuntu", "debian"
-  include_recipe "newrelic-servers::debian"
-when "redhat", "centos", "fedora"
-  include_recipe "newrelic-servers::redhat"
-end
-
-directory "/var/run/newrelic" do
-  owner "newrelic"
-  group "newrelic"
-end
-
-template "/etc/newrelic/nrsysmond.cfg" do
-  source "nrsysmond.cfg.erb"
-  owner "root"
-  group "newrelic"
-  mode "640"
-  variables( :license_key => node[:newrelic][:license_key],
-             :collector => node[:newrelic][:collector],
-             :hostname => node[:fqdn] )
-  notifies( :restart, "service[newrelic-sysmond]" ) if node[:newrelic][:enabled]
-end
-
-service "newrelic-sysmond" do
-  supports :status => true, :restart => true, :reload => true
-  if node[:newrelic][:enabled]
-    action [ :enable, :start ]
-  else
-    action [ :disable, :stop ]
+if node[:newrelic][:license_key]
+  case node[:os]
+  when "linux"
+    include_recipe "newrelic-servers::linux"
+  when "windows"
+    include_recipe "newrelic-servers::windows"
   end
+else
+  log "New Relic account not configured for account group"
 end
